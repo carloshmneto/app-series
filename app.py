@@ -61,7 +61,7 @@ def nota_input(id_serie):
     if sem_nota:
         nota = None
     else:
-        nota = st.slider("Nota", 0.5, 5, step = 0.5, key=f"nota_{id_serie}")
+        nota = st.slider("Nota", 0.5, 5.0, step = 0.5, key=f"nota_{id_serie}")
 
     return nota
 # ---------------------- INTERFACE PRINCIPAL ----------------------
