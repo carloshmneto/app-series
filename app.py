@@ -46,6 +46,7 @@ def salvar_serie(nome_pesquisa, nota_usuario, detalhes, categoria, temporada, ep
         'nota_tmdb': detalhes['nota_tmdb'],
         'nota_usuario': nota_usuario,
         'imagem': detalhes['imagem_url'],
+        'n_temporadas': detalhes['temporadas']
         'categoria': categoria,
         'temporada': temporada if categoria == 'Assistindo' else '',
         'episodio': episodio if categoria == 'Assistindo' else ''
@@ -117,7 +118,7 @@ if os.path.exists(DB_PATH):
                 st.markdown(f"- **Gêneros**: {row['generos']}")
                 st.markdown(f"- **Nota TMDb**: {row['nota_tmdb']}")
                 st.image(row["imagem"], width=200)
-                st.markdown(f"- **Número de temporadas**: {row['temporadas']}")
+                st.markdown(f"- **Número de temporadas**: {row['n_temporadas']}")
 
                 if st.button("✏️ Editar nota", key=f"editar_{idx}"):
                     sem_nota = st.checkbox("Sem nota", key=f"sem_nota_editar_{idx}")
@@ -137,7 +138,7 @@ if os.path.exists(DB_PATH):
                         row["nota_usuario"] = nova_nota
                         st.success("Nota atualizada!")
                         st.rerun()
-                        
+
                 nova_temp, novo_epi = "", ""
                 if aba == "Assistindo":
                     nova_temp = st.text_input("Editar temporada", value=str(row.get("temporada", "")), key=f"temp_{idx}")
