@@ -22,18 +22,30 @@ def buscar_detalhes_serie(nome_serie):
         data = response.json()
         if data['results']:
             resultado = data['results'][0]
+            tv_id = resultado['id']
             poster_path = resultado.get('poster_path')
             imagem_url = f'https://image.tmdb.org/t/p/w500{poster_path}' if poster_path else None
             generos_ids = resultado.get("genre_ids", [])
             generos_nomes = [generos.get(gid, "Desconhecido") for gid in generos_ids]
-            num_temporadas = data.get("number_of_seasons", None)
+
+            url_detalhes = f'https://api.themoviedb.org/3/tv/{tv_id}?api_key={API_KEY}&language=pt-BR'
+            response_detalhes = requests.get(url_detalhes)
+
+            if response_detalhes.status_code == 200:
+                detalhes = response_detalhes.json()
+                
+                poster_path = detalhes.get('poster_path')
+                num_temporadas = data.get("number_of_seasons", None)
+                num_episodios = detalhes.get("number_of_episodes", None)
+
             return {
                 "titulo_original": resultado.get("original_name"),
                 "ano": resultado.get("first_air_date", "")[:4],
                 "nota_tmdb": resultado.get("vote_average"),
                 "generos": ", ".join(generos_nomes),
                 "imagem_url": imagem_url,
-                "temporadas": num_temporadas
+                "temporadas": num_temporadas,
+                "episodios": num_episodios
             }
     return None
 
@@ -47,6 +59,7 @@ def salvar_serie(nome_pesquisa, nota_usuario, detalhes, categoria, temporada, ep
         'nota_usuario': nota_usuario,
         'imagem': detalhes['imagem_url'],
         'n_temporadas': detalhes['temporadas'],
+        'n_episodios': detalhes['episodios'],
         'categoria': categoria,
         'temporada': temporada if categoria == 'Assistindo' else '',
         'episodio': episodio if categoria == 'Assistindo' else ''
@@ -117,27 +130,9 @@ if os.path.exists(DB_PATH):
             with st.expander(f"{row['titulo_original']} ({row['ano']})"):
                 st.markdown(f"- **Gêneros**: {row['generos']}")
                 st.markdown(f"- **Nota TMDb**: {row['nota_tmdb']}")
-                st.image(row["imagem"], width=200)
                 st.markdown(f"- **Número de temporadas**: {row['n_temporadas']}")
-
-                if st.button("✏️ Editar nota", key=f"editar_{idx}"):
-                    sem_nota = st.checkbox("Sem nota", key=f"sem_nota_editar_{idx}")
-                    
-                    if not sem_nota:
-                        nova_nota = st.slider(
-                            "Editar sua nota",
-                            0.5, 5.0,
-                            float(row["nota_usuario"]) if row["nota_usuario"] is not None else 3.0,
-                            step=0.5,
-                            key=f"nota_{idx}"
-                        )
-                    else:
-                        nova_nota = None
-
-                    if st.button("💾 Salvar nota", key=f"salvar_nota_{idx}"):
-                        row["nota_usuario"] = nova_nota
-                        st.success("Nota atualizada!")
-                        st.rerun()
+                st.markdown(f"- **Número de episódioss**: {row['n_episodios']}")
+                st.image(row["imagem"], width=200)
 
                 nova_temp, novo_epi = "", ""
                 if aba == "Assistindo":
@@ -146,14 +141,24 @@ if os.path.exists(DB_PATH):
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("💾 Salvar alterações", key=f"salvar_{idx}"):
-                        df.at[idx, "nota_usuario"] = nova_nota
-                        if aba == "Assistindo":
-                            df.at[idx, "temporada"] = nova_temp
-                            df.at[idx, "episodio"] = novo_epi
-                        df.to_csv(DB_PATH, index=False)
-                        st.success("Alterações salvas com sucesso.")
-                        st.rerun()
+                    if st.button("✏️ Editar nota", key=f"editar_{idx}"):
+                        sem_nota = st.checkbox("Sem nota", key=f"sem_nota_editar_{idx}")
+                        
+                        if not sem_nota:
+                            nova_nota = st.slider(
+                                "Editar sua nota",
+                                0.5, 5.0,
+                                float(row["nota_usuario"]) if row["nota_usuario"] is not None else 3.0,
+                                step=0.5,
+                                key=f"nota_{idx}"
+                            )
+                        else:
+                            nova_nota = None
+
+                        if st.button("💾 Salvar nota", key=f"salvar_nota_{idx}"):
+                            row["nota_usuario"] = nova_nota
+                            st.success("Nota atualizada!")
+                            st.rerun()
 
                 with col2:
                     if st.button("🗑️ Remover série", key=f"remover_{idx}"):
