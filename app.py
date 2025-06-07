@@ -46,7 +46,7 @@ def salvar_serie(nome_pesquisa, nota_usuario, detalhes, categoria, temporada, ep
         'nota_tmdb': detalhes['nota_tmdb'],
         'nota_usuario': nota_usuario,
         'imagem': detalhes['imagem_url'],
-        'n_temporadas': detalhes['temporadas']
+        'n_temporadas': detalhes['temporadas'],
         'categoria': categoria,
         'temporada': temporada if categoria == 'Assistindo' else '',
         'episodio': episodio if categoria == 'Assistindo' else ''
