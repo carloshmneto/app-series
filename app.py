@@ -77,7 +77,8 @@ nome = st.text_input("Pesquisar nome da série")
 categoria = st.selectbox("Categoria", ["Assistindo", "Concluído", "Watchlist", "Abandonado"])
 if categoria != "Watchlist":
     nota = nota_input(nome)
-
+else:
+    nota = None
 temporada = episodio = ""
 if categoria == "Assistindo":
     temporada = st.text_input("Temporada atual", placeholder="ex: 2")
@@ -118,11 +119,27 @@ if os.path.exists(DB_PATH):
                 st.image(row["imagem"], width=200)
                 st.markdown(f"- **Número de temporadas**: {row['temporadas']}")
 
-                # Edição
-                nova_nota = st.slider("Editar sua nota", 0.5, 5.0, float(row["nota_usuario"]), step=0.5, key=f"nota_{idx}")
+                if st.button("✏️ Editar nota", key=f"editar_{idx}"):
+                    sem_nota = st.checkbox("Sem nota", key=f"sem_nota_editar_{idx}")
+                    
+                    if not sem_nota:
+                        nova_nota = st.slider(
+                            "Editar sua nota",
+                            0.5, 5.0,
+                            float(row["nota_usuario"]) if row["nota_usuario"] is not None else 3.0,
+                            step=0.5,
+                            key=f"nota_{idx}"
+                        )
+                    else:
+                        nova_nota = None
 
+                    if st.button("💾 Salvar nota", key=f"salvar_nota_{idx}"):
+                        row["nota_usuario"] = nova_nota
+                        st.success("Nota atualizada!")
+                        st.rerun()
+                        
                 nova_temp, novo_epi = "", ""
-                if aba == "assistindo":
+                if aba == "Assistindo":
                     nova_temp = st.text_input("Editar temporada", value=str(row.get("temporada", "")), key=f"temp_{idx}")
                     novo_epi = st.text_input("Editar episódio", value=str(row.get("episodio", "")), key=f"epi_{idx}")
 
