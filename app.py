@@ -55,6 +55,15 @@ def salvar_serie(nome_pesquisa, nota_usuario, detalhes, categoria, temporada, ep
         df = nova_entrada
     df.to_csv(DB_PATH, index=False)
 
+def nota_input(id_serie):
+    sem_nota = st.checkbox("Sem Nota", key=f"sem_nota_{id_serie}")
+
+    if sem_nota:
+        nota = None
+    else:
+        nota = st.slider("Nota", 0.5, 5, step = 0.5, key=f"nota_{id_serie}")
+
+    return nota
 # ---------------------- INTERFACE PRINCIPAL ----------------------
 
 st.title("📺 Avaliação de Séries")
@@ -63,7 +72,7 @@ generos = carregar_generos()
 st.header("➕ Adicionar nova série")
 
 nome = st.text_input("Pesquisar nome da série")
-nota = st.slider("Sua nota", 0.0, 10.0, step=0.5)
+nota = nota_input(nome)
 categoria = st.selectbox("Categoria", ["assistindo", "concluído", "watchlist"])
 
 temporada = episodio = ""
@@ -119,14 +128,14 @@ if os.path.exists(DB_PATH):
                             df.at[idx, "episodio"] = novo_epi
                         df.to_csv(DB_PATH, index=False)
                         st.success("Alterações salvas com sucesso.")
-                        st.experimental_rerun()
+                        st.rerun()
 
                 with col2:
                     if st.button("🗑️ Remover série", key=f"remover_{idx}"):
                         df = df.drop(index=idx).reset_index(drop=True)
                         df.to_csv(DB_PATH, index=False)
                         st.success("Série removida com sucesso.")
-                        st.experimental_rerun()
+                        st.rerun()
     else:
         st.info(f"Nenhuma série na lista **{aba}** ainda.")
 else:
