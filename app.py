@@ -26,12 +26,14 @@ def buscar_detalhes_serie(nome_serie):
             imagem_url = f'https://image.tmdb.org/t/p/w500{poster_path}' if poster_path else None
             generos_ids = resultado.get("genre_ids", [])
             generos_nomes = [generos.get(gid, "Desconhecido") for gid in generos_ids]
+            num_temporadas = data.get("number_of_seasons", None)
             return {
                 "titulo_original": resultado.get("original_name"),
                 "ano": resultado.get("first_air_date", "")[:4],
                 "nota_tmdb": resultado.get("vote_average"),
                 "generos": ", ".join(generos_nomes),
-                "imagem_url": imagem_url
+                "imagem_url": imagem_url,
+                "temporadas": num_temporadas
             }
     return None
 
@@ -45,8 +47,8 @@ def salvar_serie(nome_pesquisa, nota_usuario, detalhes, categoria, temporada, ep
         'nota_usuario': nota_usuario,
         'imagem': detalhes['imagem_url'],
         'categoria': categoria,
-        'temporada': temporada if categoria == 'assistindo' else '',
-        'episodio': episodio if categoria == 'assistindo' else ''
+        'temporada': temporada if categoria == 'Assistindo' else '',
+        'episodio': episodio if categoria == 'Assistindo' else ''
     }])
     if os.path.exists(DB_PATH):
         df = pd.read_csv(DB_PATH)
@@ -72,13 +74,17 @@ generos = carregar_generos()
 st.header("➕ Adicionar nova série")
 
 nome = st.text_input("Pesquisar nome da série")
-nota = nota_input(nome)
-categoria = st.selectbox("Categoria", ["assistindo", "concluído", "watchlist"])
+categoria = st.selectbox("Categoria", ["Assistindo", "Concluído", "Watchlist", "Abandonado"])
+if categoria != "Watchlist":
+    nota = nota_input(nome)
 
 temporada = episodio = ""
-if categoria == "assistindo":
+if categoria == "Assistindo":
     temporada = st.text_input("Temporada atual", placeholder="ex: 2")
     episodio = st.text_input("Episódio atual", placeholder="ex: 5")
+if categoria == "Abandonado":
+    temporada = st.text_input("Temporada final", placeholder="ex: 2")
+    episodio = st.text_input("Episódio final", placeholder="ex: 5")
 
 if st.button("Adicionar série"):
     if nome:
@@ -97,7 +103,7 @@ if os.path.exists(DB_PATH):
     st.header("📚 Suas listas")
     df = pd.read_csv(DB_PATH)
 
-    aba = st.radio("Selecione uma lista:", ["assistindo", "concluído", "watchlist"])
+    aba = st.radio("Selecione uma lista:", ["Assistindo", "Concluído", "Abandonado", "Watchlist"])
     df_cat = df[df["categoria"] == aba]
 
     # Ordenação
@@ -110,9 +116,10 @@ if os.path.exists(DB_PATH):
                 st.markdown(f"- **Gêneros**: {row['generos']}")
                 st.markdown(f"- **Nota TMDb**: {row['nota_tmdb']}")
                 st.image(row["imagem"], width=200)
+                st.markdown(f"- **Número de temporadas**: {row['temporadas']}")
 
                 # Edição
-                nova_nota = st.slider("Editar sua nota", 0.0, 10.0, float(row["nota_usuario"]), step=0.5, key=f"nota_{idx}")
+                nova_nota = st.slider("Editar sua nota", 0.5, 5.0, float(row["nota_usuario"]), step=0.5, key=f"nota_{idx}")
 
                 nova_temp, novo_epi = "", ""
                 if aba == "assistindo":
@@ -123,7 +130,7 @@ if os.path.exists(DB_PATH):
                 with col1:
                     if st.button("💾 Salvar alterações", key=f"salvar_{idx}"):
                         df.at[idx, "nota_usuario"] = nova_nota
-                        if aba == "assistindo":
+                        if aba == "Assistindo":
                             df.at[idx, "temporada"] = nova_temp
                             df.at[idx, "episodio"] = novo_epi
                         df.to_csv(DB_PATH, index=False)
